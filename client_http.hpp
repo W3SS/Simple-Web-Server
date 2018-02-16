@@ -33,14 +33,14 @@ namespace SimpleWeb {
 #endif
 
 namespace SimpleWeb {
-  template <class socket_type>
+  template <class SocketType>
   class Client;
 
-  template <class socket_type>
+  template <class SocketType>
   class ClientBase {
   public:
     class Content : public std::istream {
-      friend class ClientBase<socket_type>;
+      friend class ClientBase<SocketType>;
 
     public:
       std::size_t size() noexcept {
@@ -64,8 +64,8 @@ namespace SimpleWeb {
     };
 
     class Response {
-      friend class ClientBase<socket_type>;
-      friend class Client<socket_type>;
+      friend class ClientBase<SocketType>;
+      friend class Client<SocketType>;
 
       asio::streambuf streambuf;
 
@@ -80,7 +80,7 @@ namespace SimpleWeb {
     };
 
     class Config {
-      friend class ClientBase<socket_type>;
+      friend class ClientBase<SocketType>;
 
     private:
       Config() noexcept {}
@@ -102,12 +102,12 @@ namespace SimpleWeb {
     public:
       template <typename... Args>
       Connection(std::shared_ptr<ScopeRunner> handler_runner, long timeout, Args &&... args) noexcept
-          : handler_runner(std::move(handler_runner)), timeout(timeout), socket(new socket_type(std::forward<Args>(args)...)) {}
+          : handler_runner(std::move(handler_runner)), timeout(timeout), socket(new SocketType(std::forward<Args>(args)...)) {}
 
       std::shared_ptr<ScopeRunner> handler_runner;
       long timeout;
 
-      std::unique_ptr<socket_type> socket; // Socket must be unique_ptr since asio::ssl::stream<asio::ip::tcp::socket> is not movable
+      std::unique_ptr<SocketType> socket; // Socket must be unique_ptr since asio::ssl::stream<asio::ip::tcp::socket> is not movable
       bool in_use = false;
       bool attempt_reconnect = true;
 
@@ -420,7 +420,7 @@ namespace SimpleWeb {
       auto corrected_path = path;
       if(corrected_path == "")
         corrected_path = "/";
-      if(!config.proxy_server.empty() && std::is_same<socket_type, asio::ip::tcp::socket>::value)
+      if(!config.proxy_server.empty() && std::is_same<SocketType, asio::ip::tcp::socket>::value)
         corrected_path = "http://" + host + ':' + std::to_string(port) + corrected_path;
 
       std::unique_ptr<asio::streambuf> streambuf(new asio::streambuf());
@@ -638,8 +638,8 @@ namespace SimpleWeb {
     }
   };
 
-  template <class socket_type>
-  class Client : public ClientBase<socket_type> {};
+  template <class SocketType>
+  class Client : public ClientBase<SocketType> {};
 
   using HTTP = asio::ip::tcp::socket;
 

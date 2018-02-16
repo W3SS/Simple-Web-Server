@@ -73,7 +73,7 @@ namespace SimpleWeb {
     class Session;
     class Request {
       friend class Session;
-      template <typename socket_type>
+      template <typename SocketType>
       friend class ServerTemplate;
 
       asio::streambuf streambuf;
@@ -148,7 +148,7 @@ namespace SimpleWeb {
 
     class Response : public std::enable_shared_from_this<Response>, public std::ostream {
       friend class ServerBase;
-      template <typename socket_type>
+      template <typename SocketType>
       friend class ServerTemplate;
 
       asio::streambuf streambuf;
@@ -380,15 +380,15 @@ namespace SimpleWeb {
     }
   };
 
-  template <typename socket_type>
+  template <typename SocketType>
   class ServerTemplate : public ServerBase {
   protected:
     class Connection : public ConnectionBase, public std::enable_shared_from_this<Connection> {
     public:
       template <typename... Args>
-      Connection(std::shared_ptr<ScopeRunner> handler_runner, Args &&... args) noexcept : ConnectionBase(std::move(handler_runner)), socket(new socket_type(std::forward<Args>(args)...)) {}
+      Connection(std::shared_ptr<ScopeRunner> handler_runner, Args &&... args) noexcept : ConnectionBase(std::move(handler_runner)), socket(new SocketType(std::forward<Args>(args)...)) {}
 
-      std::unique_ptr<socket_type> socket; // Socket must be unique_ptr since asio::ssl::stream<asio::ip::tcp::socket> is not movable
+      std::unique_ptr<SocketType> socket; // Socket must be unique_ptr since asio::ssl::stream<asio::ip::tcp::socket> is not movable
       std::mutex socket_close_mutex;
 
       void close() noexcept override {
@@ -427,7 +427,7 @@ namespace SimpleWeb {
     };
 
   public:
-    std::function<void(std::unique_ptr<socket_type> &, std::shared_ptr<Request>)> on_upgrade;
+    std::function<void(std::unique_ptr<SocketType> &, std::shared_ptr<Request>)> on_upgrade;
 
   protected:
     ServerTemplate(unsigned short port) noexcept : ServerBase(port) {}
