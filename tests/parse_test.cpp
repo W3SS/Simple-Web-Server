@@ -51,9 +51,9 @@ public:
   }
 };
 
-class ClientTest : public ClientBase<HTTP> {
+class ClientTest : public ClientTemplate<HTTP> {
 public:
-  ClientTest(const std::string &server_port_path) : ClientBase<HTTP>::ClientBase(server_port_path, 80) {}
+  ClientTest(const std::string &server_port_path) : ClientTemplate<HTTP>::ClientTemplate(server_port_path, 80) {}
 
   std::shared_ptr<Connection> create_connection() noexcept override {
     return nullptr;
