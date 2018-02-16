@@ -16,13 +16,13 @@ namespace SimpleWeb {
   using HTTPS = asio::ssl::stream<asio::ip::tcp::socket>;
 
   template <>
-  class Server<HTTPS> : public ServerBase<HTTPS> {
+  class Server<HTTPS> : public ServerTemplate<HTTPS> {
     std::string session_id_context;
     bool set_session_id_context = false;
 
   public:
     Server(const std::string &cert_file, const std::string &private_key_file, const std::string &verify_file = std::string())
-        : ServerBase<HTTPS>::ServerBase(443), context(asio::ssl::context::tlsv12) {
+        : ServerTemplate<HTTPS>::ServerTemplate(443), context(asio::ssl::context::tlsv12) {
       context.use_certificate_chain_file(cert_file);
       context.use_private_key_file(private_key_file, asio::ssl::context::pem);
 

@@ -44,10 +44,10 @@ namespace SimpleWeb {
 #endif
 
 namespace SimpleWeb {
-  class ServerInterface {
+  class ServerBase {
   public:
     class Content : public std::istream {
-      friend class ServerInterface;
+      friend class ServerBase;
 
     public:
       std::size_t size() noexcept {
@@ -74,7 +74,7 @@ namespace SimpleWeb {
     class Request {
       friend class Session;
       template <typename socket_type>
-      friend class ServerBase;
+      friend class ServerTemplate;
 
       asio::streambuf streambuf;
 
@@ -147,9 +147,9 @@ namespace SimpleWeb {
     };
 
     class Response : public std::enable_shared_from_this<Response>, public std::ostream {
-      friend class ServerInterface;
-      template <typename socket_type>
       friend class ServerBase;
+      template <typename socket_type>
+      friend class ServerTemplate;
 
       asio::streambuf streambuf;
 
@@ -249,7 +249,7 @@ namespace SimpleWeb {
 
   public:
     class Config {
-      friend class ServerInterface;
+      friend class ServerBase;
 
       Config(unsigned short port) noexcept : port(port) {}
 
@@ -311,7 +311,7 @@ namespace SimpleWeb {
     /// If you have your own asio::io_service, store its pointer here before running start().
     std::shared_ptr<asio::io_service> io_service;
 
-    ServerInterface(unsigned short port) : config(port), connections(new std::unordered_set<ConnectionBase *>()), connections_mutex(new std::mutex()), handler_runner(new ScopeRunner()) {}
+    ServerBase(unsigned short port) : config(port), connections(new std::unordered_set<ConnectionBase *>()), connections_mutex(new std::mutex()), handler_runner(new ScopeRunner()) {}
 
     virtual void start() {
       if(!io_service) {
@@ -374,17 +374,14 @@ namespace SimpleWeb {
       }
     }
 
-    virtual ~ServerInterface() noexcept {
+    virtual ~ServerBase() noexcept {
       handler_runner->stop();
       stop();
     }
   };
 
-  template <class socket_type>
-  class Server;
-
-  template <class socket_type>
-  class ServerBase : public ServerInterface {
+  template <typename socket_type>
+  class ServerTemplate : public ServerBase {
   protected:
     class Connection : public ConnectionBase, public std::enable_shared_from_this<Connection> {
     public:
@@ -433,7 +430,7 @@ namespace SimpleWeb {
     std::function<void(std::unique_ptr<socket_type> &, std::shared_ptr<Request>)> on_upgrade;
 
   protected:
-    ServerBase(unsigned short port) noexcept : ServerInterface(port) {}
+    ServerTemplate(unsigned short port) noexcept : ServerBase(port) {}
 
     template <typename... Args>
     std::shared_ptr<Connection> create_connection(Args &&... args) noexcept {
@@ -661,8 +658,7 @@ namespace SimpleWeb {
         write(session, it->second);
     }
 
-    void write(const std::shared_ptr<Session> &session,
-               std::function<void(std::shared_ptr<typename ServerBase<socket_type>::Response>, std::shared_ptr<typename ServerBase<socket_type>::Request>)> &resource_function) {
+    void write(const std::shared_ptr<Session> &session, std::function<void(std::shared_ptr<Response>, std::shared_ptr<Request>)> &resource_function) {
       session->connection->set_timeout(config.timeout_content);
       auto response = std::shared_ptr<Response>(new Response(session, config.timeout_content), [this](Response *response_ptr) {
         auto response = std::shared_ptr<Response>(response_ptr);
@@ -703,15 +699,15 @@ namespace SimpleWeb {
     }
   };
 
-  template <class socket_type>
-  class Server : public ServerBase<socket_type> {};
-
   using HTTP = asio::ip::tcp::socket;
 
+  template <typename = void>
+  class Server : public ServerBase {};
+
   template <>
-  class Server<HTTP> : public ServerBase<HTTP> {
+  class Server<HTTP> : public ServerTemplate<HTTP> {
   public:
-    Server() noexcept : ServerBase<HTTP>::ServerBase(80) {}
+    Server() noexcept : ServerTemplate<HTTP>::ServerTemplate(80) {}
 
   protected:
     void accept() override {

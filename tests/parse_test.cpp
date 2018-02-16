@@ -6,9 +6,9 @@
 using namespace std;
 using namespace SimpleWeb;
 
-class ServerTest : public ServerBase<HTTP> {
+class ServerTest : public ServerTemplate<HTTP> {
 public:
-  ServerTest() : ServerBase<HTTP>::ServerBase(8080) {}
+  ServerTest() : ServerTemplate<HTTP>::ServerTemplate(8080) {}
 
   void accept() noexcept override {}
 
